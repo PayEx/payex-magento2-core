@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="payment" translate="label" sortOrder="130" showInDefault="1" showInWebsite="1" showInStore="1">
+
+            <group id="payex" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="1">
+                <label><![CDATA[<div class="payex-payment-logo"></div><div class="payex-payment-byline">The experts that we trust</div>]]></label>
+                <fieldset_css>complex payex-payment-section</fieldset_css>
+                <frontend_model>Magento\Paypal\Block\Adminhtml\System\Config\Fieldset\Payment</frontend_model>
+
+                <!--<field id="payex_info" type="text" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="1">-->
+                    <!--<label>PayEx Client</label>-->
+                    <!--<frontend_model>PayEx\Client\Block\Adminhtml\System\Info</frontend_model>-->
+                <!--</field>-->
+                <group id="client" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                    <label>Client Configuration</label>
+
+                    <field id="active" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                        <label>Enabled</label>
+                        <config_path>payex/client/active</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                    <field id="merchant_token" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                        <label>Merchant Account</label>
+                        <config_path>payex/client/merchant_token</config_path>
+                    </field>
+                    <field id="payee_id" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                        <label>Payee ID</label>
+                        <config_path>payex/client/payee_id</config_path>
+                    </field>
+                    <field id="payee_name" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                        <label>Payee Name</label>
+                        <config_path>payex/client/payee_name</config_path>
+                    </field>
+                    <field id="test_mode" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                        <label>Test Mode</label>
+                        <config_path>payex/client/test_mode</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                    <field id="debug_mode" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="1">
+                        <label>Debug Mode</label>
+                        <config_path>payex/client/debug_mode</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                </group>
+            </group>
+        </section>
+    </system>
+</config>
