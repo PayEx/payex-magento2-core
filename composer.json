@@ -12,7 +12,7 @@
   ],
   "keywords": ["magento", "payment", "payex"],
   "require": {
-    "payex/payex-ecom-php": "^3.0"
+    "payex/payex-sdk-php": "^3.0"
   },
   "repositories": {
     "magento": {
