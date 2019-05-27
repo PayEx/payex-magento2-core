@@ -16,6 +16,8 @@ class Config extends AbstractHelper
     protected $objectManager;
     protected $scopeConfig;
 
+    protected $moduleDependencies = [];
+
     const XML_CONFIG_SECTION = 'payex';
 
     /**
@@ -109,6 +111,47 @@ class Config extends AbstractHelper
      */
     public function isActive($store = null)
     {
-        return $this->getValue('active', $store) ? true : false;
+        if (!in_array($this->_getModuleName(), $this->moduleDependencies)) {
+            $this->moduleDependencies[] = $this->_getModuleName();
+        }
+
+        foreach($this->moduleDependencies as $dependency) {
+            if ($dependency == 'PayEx_Core') {
+                continue;
+            }
+
+            $moduleConfigHelper = '\\' . str_replace('_' , '\\', $dependency) . '\\Helper\\Config';
+
+            if (defined($moduleConfigHelper . '::XML_CONFIG_SECTION')
+                && defined($moduleConfigHelper . '::XML_CONFIG_GROUP')) {
+
+                $configPath = constant($moduleConfigHelper . '::XML_CONFIG_SECTION') . '/' .
+                    constant($moduleConfigHelper . '::XML_CONFIG_GROUP') . '/' . 'active';
+
+                $isActive = $this->scopeConfig->getValue(
+                    $configPath,
+                    ScopeInterface::SCOPE_STORE,
+                    $store
+                );
+
+                if (!$isActive) {
+
+                    $paymentConfigPath = 'payment/' . constant($moduleConfigHelper . '::XML_CONFIG_SECTION') . '_' .
+                        constant($moduleConfigHelper . '::XML_CONFIG_GROUP') . '/' . 'active';
+
+                    $isPaymentActive = $this->scopeConfig->getValue(
+                        $paymentConfigPath,
+                        ScopeInterface::SCOPE_STORE,
+                        $store
+                    );
+
+                    if (!$isPaymentActive) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 }
