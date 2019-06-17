@@ -2,19 +2,26 @@
 
 namespace PayEx\Core\Helper;
 
+use Magento\Config\Model\Config\PathValidator;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\App\Helper\AbstractHelper;
+use Magento\Framework\App\Helper\Context;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\App\Helper\Context;
 use Magento\Store\Model\ScopeInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
+
+use PayEx\Core\Logger\Logger;
 
 class Config extends AbstractHelper
 {
     protected $storeManager;
-    protected $objectManager;
     protected $scopeConfig;
+    protected $pathValidator;
+    protected $configWriter;
+
+    protected $logger;
 
     protected $moduleDependencies = [];
 
@@ -23,42 +30,90 @@ class Config extends AbstractHelper
     /**
      * Config constructor.
      * @param Context $context
-     * @param ObjectManagerInterface $objectManager
      * @param StoreManagerInterface $storeManager
      * @param ScopeConfigInterface $scopeConfig
+     * @param PathValidator $pathValidator
+     * @param WriterInterface $configWriter
+     * @param Logger $logger
      */
     public function __construct(
         Context $context,
-        ObjectManagerInterface $objectManager,
         StoreManagerInterface $storeManager,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        PathValidator $pathValidator,
+        WriterInterface $configWriter,
+        Logger $logger
     ) {
-        $this->objectManager = $objectManager;
         $this->storeManager  = $storeManager;
         $this->scopeConfig = $scopeConfig;
+        $this->pathValidator = $pathValidator;
+        $this->configWriter = $configWriter;
+        $this->logger = $logger;
         parent::__construct($context);
     }
 
     /**
-     * @return string
+     * @param string $module
+     * @return mixed|string
      */
-    protected function getConfigGroup()
+    protected function getConfigSection($module = '')
     {
-        $constant = "\\" . get_called_class() . "::XML_CONFIG_GROUP";
-        return (defined($constant)) ? constant($constant) : 'core';
+        $configSectionConst = "\\" . get_called_class() . "::XML_CONFIG_SECTION";
+
+        if ($module != '') {
+            $moduleConfigHelper = '\\' . str_replace('_', '\\', $module) . '\\Helper\\Config';
+            if (defined($moduleConfigHelper . '::XML_CONFIG_SECTION')) {
+                $configSectionConst = $moduleConfigHelper . '::XML_CONFIG_SECTION';
+            }
+        }
+
+        return (defined($configSectionConst)) ? constant($configSectionConst) : self::XML_CONFIG_SECTION;
     }
 
     /**
-     * @param $code
+     * @param string $module
      * @return string
      */
-    public function getConfigPath($code = '')
+    protected function getConfigGroup($module = '')
     {
-        if ($code != '') {
-            return self::XML_CONFIG_SECTION . '/' . $this->getConfigGroup() . '/' . $code;
+        $configGroupConst = "\\" . get_called_class() . "::XML_CONFIG_GROUP";
+
+        if ($module != '') {
+            $moduleConfigHelper = '\\' . str_replace('_', '\\', $module) . '\\Helper\\Config';
+            if (defined($moduleConfigHelper . '::XML_CONFIG_GROUP')) {
+                $configGroupConst = $moduleConfigHelper . '::XML_CONFIG_GROUP';
+            }
         }
 
-        return self::XML_CONFIG_SECTION . '/' . $this->getConfigGroup();
+        return (defined($configGroupConst)) ? constant($configGroupConst) : 'core';
+    }
+
+    /**
+     * @param string $code
+     * @param string $module
+     * @return string
+     */
+    public function getConfigPath($code = '', $module = '')
+    {
+        if ($code != '') {
+            return $this->getConfigSection($module) . '/' . $this->getConfigGroup($module) . '/' . $code;
+        }
+
+        return $this->getConfigSection($module) . '/' . $this->getConfigGroup($module);
+    }
+
+    /**
+     * @param string $code
+     * @param string $module
+     * @return string
+     */
+    public function getPaymentConfigPath($code = '', $module = '')
+    {
+        if ($code != '') {
+            return 'payment/' . $this->getConfigSection($module) . '_' . $this->getConfigGroup($module) . '/' . $code;
+        }
+
+        return 'payment/' . $this->getConfigSection($module) . '_' . $this->getConfigGroup($module);
     }
 
     /**
@@ -74,7 +129,7 @@ class Config extends AbstractHelper
 
         return $this->scopeConfig->getValue(
             $this->getConfigPath($code),
-            ScopeInterface::SCOPE_STORE,
+            $this->getScope($store),
             $store
         );
     }
@@ -99,59 +154,121 @@ class Config extends AbstractHelper
         }
 
         return $this->scopeConfig->getValue(
-            sprintf('payment/' . $paymentMethod . '/%s', $code),
-            ScopeInterface::SCOPE_STORE,
+            $this->getPaymentConfigPath($code, $paymentMethod),
+            $this->getScope($store),
             $store
         );
     }
 
     /**
-     * @param Store|int|string|null $store
+     * @param string $module
      * @return bool
      */
-    public function isActive($store = null)
+    public function isPayment($module = '')
     {
-        if (!in_array($this->_getModuleName(), $this->moduleDependencies)) {
-            $this->moduleDependencies[] = $this->_getModuleName();
+        $isPayment = false;
+
+        try {
+            $paymentConfigPath = $this->getPaymentConfigPath('active', $module);
+            if ($this->pathValidator->validate($paymentConfigPath)) {
+                $isPayment = true;
+            }
+        } catch (ValidatorException $e) {
         }
 
-        foreach($this->moduleDependencies as $dependency) {
+        return $isPayment;
+    }
+
+    /**
+     * @param Store|int|string|null $store
+     * @param string $module
+     * @return bool
+     */
+    public function isActive($store = null, $module = '')
+    {
+        $isActive = false;
+
+        if ($isPayment = $this->isPayment($module)) {
+            $isActive = $this->scopeConfig->isSetFlag($this->getPaymentConfigPath('active', $module));
+        }
+
+        if (!$isPayment) {
+            $isActive = $this->scopeConfig->isSetFlag($this->getConfigPath('active', $module));
+        }
+
+        if (!$isActive || $module != '') {
+            return $isActive;
+        }
+
+        if (in_array($this->_getModuleName(), $this->moduleDependencies)) {
+            $key = array_search($this->_getModuleName(), $this->moduleDependencies);
+            unset($this->moduleDependencies[$key]);
+        }
+
+        foreach ($this->moduleDependencies as $dependency) {
             if ($dependency == 'PayEx_Core') {
                 continue;
             }
 
-            $moduleConfigHelper = '\\' . str_replace('_' , '\\', $dependency) . '\\Helper\\Config';
+            $isActive = $this->isActive($store, $dependency);
 
-            if (defined($moduleConfigHelper . '::XML_CONFIG_SECTION')
-                && defined($moduleConfigHelper . '::XML_CONFIG_GROUP')) {
+            if (!$isActive) {
+                break;
+            }
 
-                $configPath = constant($moduleConfigHelper . '::XML_CONFIG_SECTION') . '/' .
-                    constant($moduleConfigHelper . '::XML_CONFIG_GROUP') . '/' . 'active';
-
-                $isActive = $this->scopeConfig->getValue(
-                    $configPath,
-                    ScopeInterface::SCOPE_STORE,
+            if ($isActive && $dependency == 'PayEx_Client') {
+                $merchantToken = $this->scopeConfig->getValue(
+                    $this->getConfigPath('merchant_token', $dependency),
+                    $this->getScope($store),
                     $store
                 );
 
-                if (!$isActive) {
+                if (trim($merchantToken) == '') {
+                    $isActive = false;
+                    break;
+                }
 
-                    $paymentConfigPath = 'payment/' . constant($moduleConfigHelper . '::XML_CONFIG_SECTION') . '_' .
-                        constant($moduleConfigHelper . '::XML_CONFIG_GROUP') . '/' . 'active';
+                $payeeId = $this->scopeConfig->getValue(
+                    $this->getConfigPath('payee_id', $dependency),
+                    $this->getScope($store),
+                    $store
+                );
 
-                    $isPaymentActive = $this->scopeConfig->getValue(
-                        $paymentConfigPath,
-                        ScopeInterface::SCOPE_STORE,
-                        $store
-                    );
-
-                    if (!$isPaymentActive) {
-                        return false;
-                    }
+                if (trim($payeeId) == '') {
+                    $isActive = false;
+                    break;
                 }
             }
         }
 
-        return true;
+        return $isActive;
+    }
+
+    public function deactivateModule($scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $store = null, $module = '')
+    {
+        if ($this->isPayment($module)) {
+            $configPath = $this->getPaymentConfigPath('active', $module);
+        }
+
+        if (!isset($configPath)) {
+            $configPath = $this->getConfigPath('active', $module);
+        }
+
+        $this->configWriter->save($configPath, 0, $scope, $store);
+    }
+
+    /**
+     * Get the scope value of the store
+     *
+     * @param Store $store
+     * @return string
+     */
+    private function getScope($store = null)
+    {
+        if ($store === null) {
+            return ScopeConfigInterface::SCOPE_TYPE_DEFAULT;
+        }
+
+        return ScopeInterface::SCOPE_STORES;
     }
 }
