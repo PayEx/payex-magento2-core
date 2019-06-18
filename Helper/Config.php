@@ -166,15 +166,8 @@ class Config extends AbstractHelper
      */
     public function isPayment($module = '')
     {
-        $isPayment = false;
-
-        try {
-            $paymentConfigPath = $this->getPaymentConfigPath('active', $module);
-            if ($this->pathValidator->validate($paymentConfigPath)) {
-                $isPayment = true;
-            }
-        } catch (ValidatorException $e) {
-        }
+        $paymentConfigPath = $this->getPaymentConfigPath('active', $module);
+        $isPayment = ($this->scopeConfig->isSetFlag($paymentConfigPath) == null) ? false : true;
 
         return $isPayment;
     }
@@ -186,23 +179,23 @@ class Config extends AbstractHelper
      */
     public function isActive($store = null, $module = '')
     {
-        $isActive = false;
-
-        if ($isPayment = $this->isPayment($module)) {
-            $isActive = $this->scopeConfig->isSetFlag($this->getPaymentConfigPath('active', $module));
+        if ($this->isPayment($module)) {
+            $configPath = $this->getPaymentConfigPath('active', $module);
         }
 
-        if (!$isPayment) {
-            $isActive = $this->scopeConfig->isSetFlag($this->getConfigPath('active', $module));
+        if (!isset($configPath)) {
+            $configPath = $this->getConfigPath('active', $module);
         }
 
-        if (!$isActive || $module != '') {
-            return $isActive;
-        }
+        $isActive = $this->scopeConfig->isSetFlag($configPath, $this->getScope($store), $store);
 
         if (in_array($this->_getModuleName(), $this->moduleDependencies)) {
             $key = array_search($this->_getModuleName(), $this->moduleDependencies);
             unset($this->moduleDependencies[$key]);
+        }
+
+        if (!$isActive || $module != '' || count($this->moduleDependencies) == 0) {
+            return $isActive;
         }
 
         foreach ($this->moduleDependencies as $dependency) {
