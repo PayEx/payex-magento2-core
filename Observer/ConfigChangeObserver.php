@@ -70,7 +70,7 @@ class ConfigChangeObserver implements ObserverInterface
             $scopeId = $store;
         }
 
-        $changedPaths = $observer->getData('changed_paths');
+        $changedPaths = (array)$observer->getData('changed_paths');
 
         $payexActiveChangePaths = array_filter($changedPaths, function ($var) {
             return (
