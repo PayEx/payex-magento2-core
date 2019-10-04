@@ -1,8 +1,7 @@
 <?php
 
-namespace PayEx\Core\Observer;
+namespace SwedbankPay\Core\Observer;
 
-use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -10,41 +9,70 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 
-use PayEx\Core\Helper\Config as CoreConfig;
-use PayEx\Core\Logger\Logger;
+use SwedbankPay\Core\Helper\Config as CoreConfig;
+use SwedbankPay\Core\Helper\ConfigFactory;
+use SwedbankPay\Core\Logger\Logger;
 
 class ConfigChangeObserver implements ObserverInterface
 {
-    /** @var ScopeConfigInterface */
+    /**
+     * @var ScopeConfigInterface
+     */
     protected $scopeConfig;
 
-    /** @var StoreManagerInterface */
+    /**
+     * @var StoreManagerInterface
+     */
     protected $storeManager;
 
-    /** @var CoreConfig */
+    /**
+     * @var CoreConfig
+     */
     protected $coreConfig;
 
-    /** @var Logger */
+    /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
+     * @var Logger
+     */
     protected $logger;
 
-    /** @var bool */
+    /**
+     * @var bool
+     */
     private static $isRunning = false;
 
+    /**
+     * ConfigChangeObserver constructor.
+     * @param ScopeConfigInterface $scopeConfig
+     * @param StoreManagerInterface $storeManager
+     * @param CoreConfig $coreConfig
+     * @param ConfigFactory $configFactory
+     * @param Logger $logger
+     */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
         CoreConfig $coreConfig,
+        ConfigFactory $configFactory,
         Logger $logger
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
         $this->coreConfig = $coreConfig;
+        $this->configFactory = $configFactory;
         $this->logger = $logger;
     }
 
     /**
      * @param Observer $observer
      * @throws ValidatorException
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function execute(Observer $observer)
     {
@@ -72,20 +100,20 @@ class ConfigChangeObserver implements ObserverInterface
 
         $changedPaths = (array)$observer->getData('changed_paths');
 
-        $payexActiveChangePaths = array_filter($changedPaths, function ($var) {
+        $activeChangePaths = array_filter($changedPaths, function ($var) {
             return (
-                preg_match('|payex/[^/]+/active|', $var) ||
-                preg_match('|payment/payex_[^/]+/active|', $var)
+                preg_match('|swedbank_pay/[^/]+/active|', $var) ||
+                preg_match('|payment/swedbank_pay_[^/]+/active|', $var)
             );
         });
 
-        if (count($payexActiveChangePaths) == 0) {
+        if (count($activeChangePaths) == 0) {
             return;
         }
 
         $deactivated = [];
 
-        foreach ($payexActiveChangePaths as $changePath) {
+        foreach ($activeChangePaths as $changePath) {
             $isActivated = $this->scopeConfig->getValue(
                 $changePath,
                 $scope,
@@ -94,10 +122,10 @@ class ConfigChangeObserver implements ObserverInterface
 
             $moduleConfigGroup = '';
 
-            if (strpos($changePath, 'payment/payex_') !== false) {
+            if (strpos($changePath, 'payment/swedbank_pay_') !== false) {
                 $moduleConfigGroup = substr(
                     $changePath,
-                    strlen('payment/payex_'),
+                    strlen('payment/swedbank_pay_'),
                     0 - strlen('/active')
                 );
             }
@@ -105,7 +133,7 @@ class ConfigChangeObserver implements ObserverInterface
             if ($moduleConfigGroup == '') {
                 $moduleConfigGroup = substr(
                     $changePath,
-                    strlen('payex/'),
+                    strlen('swedbank_pay/'),
                     0 - strlen('/active')
                 );
             }
@@ -114,8 +142,7 @@ class ConfigChangeObserver implements ObserverInterface
             $moduleNameParts = array_map('ucfirst', $moduleNameParts);
             $moduleName = implode('', $moduleNameParts);
 
-            $objectManager = ObjectManager::getInstance();
-            $moduleConfigHelper = $objectManager->get('PayEx\\' . $moduleName . '\\Helper\\Config');
+            $moduleConfigHelper = $this->configFactory->create($moduleName);
 
             $isValid = $moduleConfigHelper->isActive($store);
 
@@ -129,8 +156,8 @@ class ConfigChangeObserver implements ObserverInterface
 
         if (count($deactivated) > 0) {
             throw new ValidatorException(
-                __('Unable to activate PayEx module(s): ' . implode(', ', $deactivated) . '. ' .
-                'Please make sure the PayEx Client and any other required settings are correct.')
+                __('Unable to activate SwedbankPay module(s): ' . implode(', ', $deactivated) . '. ' .
+                'Please make sure the SwedbankPay API Credentials and any other required settings are correct.')
             );
         }
     }

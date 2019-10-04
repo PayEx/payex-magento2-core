@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <type name="PayEx\Core\Logger\Handler">
+    <type name="SwedbankPay\Core\Logger\Handler">
         <arguments>
             <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
         </arguments>
     </type>
-    <type name="PayEx\Core\Logger\Logger">
+    <type name="SwedbankPay\Core\Logger\Logger">
         <arguments>
-            <argument name="name" xsi:type="string">payex-logger</argument>
+            <argument name="name" xsi:type="string">swedbank-pay-logger</argument>
             <argument name="handlers"  xsi:type="array">
-                <item name="debug" xsi:type="object">PayEx\Core\Logger\Debug</item>
-                <item name="error" xsi:type="object">PayEx\Core\Logger\Error</item>
-                <item name="exception" xsi:type="object">PayEx\Core\Logger\Exception</item>
+                <item name="debug" xsi:type="object">SwedbankPay\Core\Logger\Debug</item>
+                <item name="error" xsi:type="object">SwedbankPay\Core\Logger\Error</item>
+                <item name="exception" xsi:type="object">SwedbankPay\Core\Logger\Exception</item>
             </argument>
         </arguments>
     </type>
