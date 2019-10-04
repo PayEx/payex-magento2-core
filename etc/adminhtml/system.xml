@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="payment">
+            <group id="swedbank_pay" translate="label" type="text"
+                   sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label><![CDATA[<div class="swedbank_pay-payment-logo"></div>
+                    <div class="swedbank_pay-payment-byline">The experts that we trust</div>]]></label>
+                <fieldset_css>complex swedbank_pay-payment-section</fieldset_css>
+                <frontend_model>Magento\Paypal\Block\Adminhtml\System\Config\Fieldset\Payment</frontend_model>
+                <group id="core" translate="label" type="text"
+                       sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Core Configuration</label>
+                    <field id="active" translate="label" type="select"
+                           sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Enabled</label>
+                        <config_path>swedbank_pay/core/active</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                    <field id="merchant_token" translate="label" type="text"
+                           sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Merchant Account</label>
+                        <config_path>swedbank_pay/core/merchant_token</config_path>
+                        <comment><![CDATA[The Merchant Account token needed to access SwedbankPay' eCom APIs. Tokens are
+                        generated in <a href="https://admin.externalintegration.payex.com/psp/login" target="_blank">
+                        SwedbankPay Admin</a>. Learn how to getting started in the
+                        <a href="https://developer.payex.com/xwiki/wiki/developer/view/Main/ecommerce/resources/admin/"
+                        target="_blank">Admin Manual</a>.]]></comment>
+                        <depends>
+                            <field id='active'>1</field>
+                        </depends>
+                        <validate>required-entry validate-no-empty</validate>
+                    </field>
+                    <field id="payee_id" translate="label" type="text"
+                           sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Payee ID</label>
+                        <config_path>swedbank_pay/core/payee_id</config_path>
+                        <comment><![CDATA[Your SwedbankPay Payee ID]]></comment>
+                        <depends>
+                            <field id='active'>1</field>
+                        </depends>
+                        <validate>required-entry validate-no-empty</validate>
+                    </field>
+                    <field id="payee_name" translate="label" type="text"
+                           sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Payee Name</label>
+                        <config_path>swedbank_pay/core/payee_name</config_path>
+                        <comment><![CDATA[Your SwedbankPay Payee Name]]></comment>
+                        <depends>
+                            <field id='active'>1</field>
+                        </depends>
+                        <validate>required-entry validate-no-empty</validate>
+                    </field>
+                    <field id="test_mode" translate="label" type="select"
+                           sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Test Mode</label>
+                        <config_path>swedbank_pay/core/test_mode</config_path>
+                        <comment><![CDATA[Only disable in live production site.]]></comment>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <depends>
+                            <field id='active'>1</field>
+                        </depends>
+                    </field>
+                    <field id="debug_mode" translate="label" type="select"
+                           sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Debug Mode</label>
+                        <config_path>swedbank_pay/core/debug_mode</config_path>
+                        <comment><![CDATA[Enable this for more in-depth logging, should be off by default.]]></comment>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <depends>
+                            <field id='active'>1</field>
+                        </depends>
+                    </field>
+                </group>
+            </group>
+        </section>
+    </system>
+</config>
