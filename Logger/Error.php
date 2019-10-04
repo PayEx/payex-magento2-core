@@ -1,15 +1,15 @@
 <?php
-namespace PayEx\Core\Logger;
+namespace SwedbankPay\Core\Logger;
 
 use Magento\Framework\Filesystem\DriverInterface;
 use Magento\Framework\Logger\Handler\Base;
 use Monolog\Logger;
 
-use PayEx\Client\Exception\ClientException;
+use SwedbankPay\Core\Exception\ClientException;
 
 class Error extends Base
 {
-    protected $fileName = '/var/log/payex_error.log';
+    protected $fileName = '/var/log/swedbank_pay_error.log';
     protected $loggerType = Logger::ERROR;
     protected $exceptionHandler;
 

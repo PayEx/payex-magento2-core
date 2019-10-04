@@ -1,15 +1,5 @@
-# PayEx Magento 2 Core
+# SwedbankPay Core Module for M2
 
-The core component of the [PayEx Checkout Magento 2 plugin][checkout-magento2].
+## Description ##
 
-## Installation
-
-You can install [this plugin][core-magento2] with [Composer][composer]:
-
-```sh
-composer require payex/magento2-core
-```
-
-  [checkout-magento2]:  https://packagist.org/packages/payex/magento2-checkout
-  [core-magento2]:      https://packagist.org/packages/payex/magento2-core
-  [composer]:           https://getcomposer.org/
+The SwedbankPay Core module for Magento 2 integrates the PayEx PHP client library into Magento 2 for enabling interaction with the PayEx eCommerce API.

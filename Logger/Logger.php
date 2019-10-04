@@ -1,6 +1,6 @@
 <?php
 
-namespace PayEx\Core\Logger;
+namespace SwedbankPay\Core\Logger;
 
 class Logger extends \Monolog\Logger
 {

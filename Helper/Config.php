@@ -1,6 +1,6 @@
 <?php
 
-namespace PayEx\Core\Helper;
+namespace SwedbankPay\Core\Helper;
 
 use Magento\Config\Model\Config\PathValidator;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -11,21 +11,40 @@ use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\ScopeInterface;
-
-use PayEx\Core\Logger\Logger;
+use SwedbankPay\Core\Logger\Logger;
 
 class Config extends AbstractHelper
 {
+    const XML_CONFIG_SECTION = 'swedbank_pay';
+
+    const XML_CONFIG_GROUP = 'core';
+
+    /**
+     * @var StoreManagerInterface
+     */
     protected $storeManager;
+
+    /**
+     * @var ScopeConfigInterface
+     */
     protected $scopeConfig;
+
+    /**
+     * @var PathValidator
+     */
     protected $pathValidator;
+
+    /**
+     * @var WriterInterface
+     */
     protected $configWriter;
 
+    /**
+     * @var Logger
+     */
     protected $logger;
 
     protected $moduleDependencies = [];
-
-    const XML_CONFIG_SECTION = 'payex';
 
     /**
      * Config constructor.
@@ -176,8 +195,11 @@ class Config extends AbstractHelper
      * @param Store|int|string|null $store
      * @param string $module
      * @return bool
+
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    public function isActive($store = null, $module = '')
+    public function isActive($store = null, $module = 'core')
     {
         if ($this->isPayment($module)) {
             $configPath = $this->getPaymentConfigPath('active', $module);
@@ -194,22 +216,18 @@ class Config extends AbstractHelper
             unset($this->moduleDependencies[$key]);
         }
 
-        if (!$isActive || $module != '' || count($this->moduleDependencies) == 0) {
+        if (!$isActive || $module != 'core' || count($this->moduleDependencies) == 0) {
             return $isActive;
         }
 
         foreach ($this->moduleDependencies as $dependency) {
-            if ($dependency == 'PayEx_Core') {
-                continue;
-            }
-
             $isActive = $this->isActive($store, $dependency);
 
             if (!$isActive) {
                 break;
             }
 
-            if ($isActive && $dependency == 'PayEx_Client') {
+            if ($isActive && $dependency == 'SwedbankPay_Core') {
                 $merchantToken = $this->scopeConfig->getValue(
                     $this->getConfigPath('merchant_token', $dependency),
                     $this->getScope($store),
@@ -237,6 +255,11 @@ class Config extends AbstractHelper
         return $isActive;
     }
 
+    /**
+     * @param string $scope
+     * @param Store $store
+     * @param string $module
+     */
     public function deactivateModule($scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $store = null, $module = '')
     {
         if ($this->isPayment($module)) {
