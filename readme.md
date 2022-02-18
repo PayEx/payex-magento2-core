@@ -1,15 +1,11 @@
-# PayEx Magento 2 Core
+# Legacy PayEx Magento 2 Core
 
-The core component of the [PayEx Checkout Magento 2 plugin][checkout-magento2].
+**DO NOT USE!**
 
-## Installation
+This is the **archived** repository for the legacy PayEx Magento 2 Core
+plugin. Since 2020, PayEx' Commerce offering have been rebranded to
+[Swedbank Pay][swedbankpay] and the latest available libraries, plugins and
+modules are available on the [Swedbank Pay Developer Portal][developer].
 
-You can install [this plugin][core-magento2] with [Composer][composer]:
-
-```sh
-composer require payex/magento2-core
-```
-
-  [checkout-magento2]:  https://packagist.org/packages/payex/magento2-checkout
-  [core-magento2]:      https://packagist.org/packages/payex/magento2-core
-  [composer]:           https://getcomposer.org/
+[developer]: https://developer.swedbankpay.com/modules-sdks/
+[swedbankpay]: https://www.swedbankpay.com/
